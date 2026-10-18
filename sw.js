@@ -1,0 +1,1 @@
+const CACHE='fishing-hq-v1';self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./index.html','./manifest.webmanifest','./icon.svg']))));self.addEventListener('fetch',event=>{const u=new URL(event.request.url);if(u.origin===self.location.origin)event.respondWith(fetch(event.request).catch(()=>caches.match(event.request)));});
