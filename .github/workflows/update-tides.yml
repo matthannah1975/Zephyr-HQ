@@ -1,6 +1,10 @@
 name: Update Noosa tide predictions
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/update_tides.py'
+      - '.github/workflows/update-tides.yml'
   schedule:
     - cron: '17 1 * * 1'
 permissions:
