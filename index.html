@@ -39,7 +39,7 @@ return 'in '+(mins>=60?Math.floor(mins/60)+'h ':'')+(mins%60)+'m';
 function renderSun(){
 if(!sunData)return;
 const events=sunEvents();
-$('sunGraphic').innerHTML=events.map(e=>'<div style="display:flex;align-items:center;gap:8px;margin:10px 0"><span style="font-size:29px;color:#ffd36e;min-width:38px">'+e.icon+'</span><div><strong>'+e.type+'</strong><div class="sub">'+sunCountdown(e.time)+'</div></div></div>').join('');
+$('sunGraphic').innerHTML=events.map(e=>'<div style="display:flex;align-items:center;gap:7px;margin:5px 0"><span style="font-size:23px;color:#ffd36e;min-width:28px">'+e.icon+'</span><div style="line-height:1.15"><div style="font-size:12px;font-weight:700;white-space:nowrap">'+e.type+' in</div><div class="sub" style="font-size:14px;margin-top:2px">'+sunCountdown(e.time).replace(/^in /,'')+'</div></div></div>').join('');
 $('sunrise').textContent=events[0]?events[0].type+' '+sunClock(events[0].time):'—';
 $('sunset').textContent=events[1]?events[1].type+' '+sunClock(events[1].time):'—';
 }
