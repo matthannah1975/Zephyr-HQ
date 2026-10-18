@@ -14,9 +14,17 @@ return '<div class="card"><h3 style="margin-top:0">Next four lunar quarters</h3>
 }
 let sunData=null;
 function sunTimes(d,lat){
-const date=new Date(d+'T12:00:00+10:00'),start=new Date(date.getFullYear(),0,0),n=Math.floor((date-start)/86400000),decl=23.44*Math.sin(2*Math.PI*(284+n)/365)*Math.PI/180,phi=lat*Math.PI/180;
-const hour=alt=>Math.acos(Math.max(-1,Math.min(1,(Math.sin(alt*Math.PI/180)-Math.sin(phi)*Math.sin(decl))/(Math.cos(phi)*Math.cos(decl))))*180/Math.PI;
-return (hour(-6)-hour(-0.833))*4*60000;
+const day=new Date(d+'T12:00:00+10:00');
+const start=Date.UTC(day.getFullYear(),0,1);
+const n=Math.floor((Date.UTC(day.getFullYear(),day.getMonth(),day.getDate())-start)/86400000)+1;
+const decl=23.44*Math.sin(2*Math.PI*(284+n)/365)*Math.PI/180;
+const phi=lat*Math.PI/180;
+function hourAngle(alt){
+const numerator=Math.sin(alt*Math.PI/180)-Math.sin(phi)*Math.sin(decl);
+const denominator=Math.cos(phi)*Math.cos(decl);
+return Math.acos(Math.max(-1,Math.min(1,numerator/denominator)));
+}
+return (hourAngle(-6)-hourAngle(-0.833))*12*60*60000/Math.PI;
 }
 function sunClock(iso){return localTime(iso)}
 function untilSun(t){if(!t)return '—';const ms=new Date(t).getTime()-Date.now();if(ms<=0)return 'Passed today';const mins=Math.ceil(ms/60000);return mins>=60?Math.floor(mins/60)+'h '+mins%60+'m away':mins+'m away'}
