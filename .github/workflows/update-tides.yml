@@ -19,7 +19,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/noosa-tides-2026.json
+          git add data/noosa-tides-2026.json data/mooloolaba-tides-2026.json
           if ! git diff --cached --quiet; then
             git commit -m "Refresh Noosa Head tide predictions"
             git push
