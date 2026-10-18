@@ -1,4 +1,4 @@
-import csv, io, json, re, urllib.request
+import csv, io, json, re, urllib.request, urllib.parse
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -30,12 +30,36 @@ def parse(text):
   stamp=datetime(day.year,day.month,day.day,tm[0],tm[1],tzinfo=TZ).isoformat()
   out.append([stamp,round(height,3),row[2].strip()])
  return sorted(out,key=lambda p:p[0])
-def download(url):
- req=urllib.request.Request(url,headers={"User-Agent":"ZephyrHQ-TideDashboard/1.0","Accept":"text/csv"})
- with urllib.request.urlopen(req,timeout=45) as r:return r.read().decode("utf-8-sig")
+def download_records(resource_id):
+ import json
+ records=[]
+ offset=0
+ while True:
+  url="https://www.data.qld.gov.au/api/3/action/datastore_search?"+urllib.parse.urlencode({"resource_id":resource_id,"limit":10000,"offset":offset})
+  req=urllib.request.Request(url,headers={"User-Agent":"ZephyrHQ/1.0","Accept":"application/json"})
+  with urllib.request.urlopen(req,timeout=60) as response:
+   obj=json.load(response)
+  if not obj.get("success"):raise RuntimeError("Queensland datastore API returned failure")
+  batch=obj["result"]["records"]
+  records.extend(batch)
+  offset+=len(batch)
+  if not batch or offset>=obj["result"].get("total",offset):break
+ return records
+def parse_records(records):
+ out=[]
+ for row in records:
+  fields={str(k).strip().lower():str(v).strip() for k,v in row.items()}
+  day=parse_date(fields.get("date",""))
+  tm=parse_time(fields.get("time",""))
+  if not day or not tm:continue
+  try:height=float(fields.get("reading",""))
+  except ValueError:continue
+  stamp=datetime(day.year,day.month,day.day,tm[0],tm[1],tzinfo=TZ).isoformat()
+  out.append([stamp,round(height,3),fields.get("ind","")])
+ return sorted(out,key=lambda p:p[0])
 data={}
-for name,url in SOURCES.items():
- data[name]=parse(download(url))
+for name,rid in {"interval":"1542ee15-6f50-414f-bc15-66732f1f7eae","hilo":"1977d083-3119-41aa-8758-3980f3eb8a3f"}.items():
+ data[name]=parse_records(download_records(rid))
  if len(data[name])<100:raise RuntimeError(f"Too few {name} tide records: {len(data[name])}")
 Path("data").mkdir(exist_ok=True)
 Path("data/noosa-tides-2026.json").write_text(json.dumps({"station":"Noosa Head","timezone":"Australia/Brisbane","source":"Maritime Safety Queensland / Queensland Government, CC BY 4.0","interval":data["interval"],"hilo":data["hilo"]},separators=(",",":")))
