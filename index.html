@@ -36,10 +36,14 @@ function sunCountdown(iso){
 const mins=Math.max(0,Math.ceil((new Date(iso).getTime()-Date.now())/60000));
 return 'in '+(mins>=60?Math.floor(mins/60)+'h ':'')+(mins%60)+'m';
 }
+function sunEventIcon(type){
+const rise=type==='Sunrise';
+return '<svg viewBox="0 0 48 48" width="42" height="42" role="img" aria-label="'+type+'" style="display:block;flex-shrink:0"><path d="M5 34H43" stroke="#91b4c5" stroke-width="2.5" stroke-linecap="round"/><path d="M13 34A11 11 0 0 1 35 34" fill="'+(rise?'#ffd777':'#f6a15d')+'"/><path d="M24 7V13M9 15L14 20M39 15L34 20M4 26H10M44 26H38" stroke="'+(rise?'#ffd777':'#f6a15d')+'" stroke-width="3" stroke-linecap="round"/><path d="M9 40H39" stroke="#6f9eb1" stroke-width="2" stroke-linecap="round"/></svg>';
+}
 function renderSun(){
 if(!sunData)return;
 const events=sunEvents();
-$('sunGraphic').innerHTML=events.map(e=>'<div style="display:flex;align-items:center;gap:7px;margin:5px 0"><span style="font-size:23px;color:#ffd36e;min-width:28px">'+e.icon+'</span><div style="line-height:1.15"><div style="font-size:12px;font-weight:700;white-space:nowrap">'+e.type+' in</div><div class="sub" style="font-size:14px;margin-top:2px">'+sunCountdown(e.time).replace(/^in /,'')+'</div></div></div>').join('');
+$('sunGraphic').innerHTML='<div style="display:grid;grid-template-rows:1fr 1fr;min-height:132px">'+events.map((e,i)=>'<div style="display:flex;align-items:center;justify-content:center;gap:9px;padding:5px 0;'+(i?'border-top:1px solid #294458;':'')+'">'+sunEventIcon(e.type)+'<div style="line-height:1.2;min-width:83px"><div style="font-size:12px;font-weight:700;white-space:nowrap">'+e.type+' in</div><div class="sub" style="font-size:15px;margin-top:3px">'+sunCountdown(e.time).replace(/^in /,'')+'</div></div></div>').join('')+'</div>';
 $('sunrise').textContent=events[0]?events[0].type+' '+sunClock(events[0].time):'—';
 $('sunset').textContent=events[1]?events[1].type+' '+sunClock(events[1].time):'—';
 }
