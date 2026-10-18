@@ -57,10 +57,14 @@ def parse_records(records):
   stamp=datetime(day.year,day.month,day.day,tm[0],tm[1],tzinfo=TZ).isoformat()
   out.append([stamp,round(height,3),fields.get("ind","")])
  return sorted(out,key=lambda p:p[0])
-data={}
-for name,rid in {"interval":"1542ee15-6f50-414f-bc15-66732f1f7eae","hilo":"1977d083-3119-41aa-8758-3980f3eb8a3f"}.items():
- data[name]=parse_records(download_records(rid))
- if len(data[name])<100:raise RuntimeError(f"Too few {name} tide records: {len(data[name])}")
-Path("data").mkdir(exist_ok=True)
-Path("data/noosa-tides-2026.json").write_text(json.dumps({"station":"Noosa Head","timezone":"Australia/Brisbane","source":"Maritime Safety Queensland / Queensland Government, CC BY 4.0","interval":data["interval"],"hilo":data["hilo"]},separators=(",",":")))
-print("Tide points:",{k:len(v) for k,v in data.items()})
+for station, resources, filename in [
+ ("Noosa Head", {"interval":"1542ee15-6f50-414f-bc15-66732f1f7eae","hilo":"1977d083-3119-41aa-8758-3980f3eb8a3f"}, "noosa-tides-2026.json"),
+ ("Mooloolaba", {"interval":"b0b2fb21-4fdc-4446-8423-114af3e07de4","hilo":"58920636-0eb3-419f-bc28-68e1d0b88c82"}, "mooloolaba-tides-2026.json")
+]:
+ data={}
+ for name,rid in resources.items():
+  data[name]=parse_records(download_records(rid))
+  if len(data[name])<100:raise RuntimeError(f"Too few {station} {name} tide records: {len(data[name])}")
+ Path("data").mkdir(exist_ok=True)
+ Path("data",filename).write_text(json.dumps({"station":station,"timezone":"Australia/Brisbane","source":"Maritime Safety Queensland / Queensland Government, CC BY 4.0","interval":data["interval"],"hilo":data["hilo"]},separators=(",",":")))
+ print(station,"tide points:",{k:len(v) for k,v in data.items()})
