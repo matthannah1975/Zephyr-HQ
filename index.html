@@ -85,8 +85,8 @@ function miniTide(){if(!tideData)return;const now=Date.now(),p=tideData.hilo;let
    interval:d.interval.map(p=>{const t=Date.parse(p[0]);return [new Date(t+shift(t)*60000).toISOString(),p[1],p[2]]})
   };
   nextTides();miniTide();
-  $('tideStatus').style.display='block';
-  $('tideStatus').textContent='MSQ Mooloolaba reference · official local high/low time offsets · heights and curve indicative only (not local predictions)';
+  $('tideStatus').style.display='none';
+  $('tideStatus').textContent='';
  }catch(e){
   tideData=null;$('miniTide').innerHTML='';
   $('lowAt').textContent='—';$('highAt').textContent='—';
