@@ -42,10 +42,14 @@ return '<svg viewBox="0 0 32 32" role="img" aria-label="'+type+'" style="width:3
 }
 function renderSun(){
 if(!sunData)return;
-const events=sunEvents();
-$('sunGraphic').innerHTML='<div style="display:grid;grid-template-rows:1fr 1fr;min-height:132px">'+events.map((e,i)=>'<div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:6px 0;'+(i?'border-top:1px solid #294458;':'')+'">'+sunEventIcon(e.type)+'<div style="line-height:1.2;min-width:83px"><div style="font-size:15px;font-weight:700;white-space:nowrap">'+e.type+' in</div><div class="sub" style="font-size:19px;margin-top:3px">'+sunCountdown(e.time).replace(/^in /,'')+'</div></div></div>').join('')+'</div>';
-$('sunrise').textContent=events[0]?events[0].type+' '+sunClock(events[0].time):'—';
-$('sunset').textContent=events[1]?events[1].type+' '+sunClock(events[1].time):'—';
+const e=sunEvents()[0];
+if(!e){$('sunGraphic').textContent='Sun times unavailable';return;}
+const rise=e.type==='Sunrise',color=rise?'#ffd74e':'#d96b37';
+const mins=Math.max(0,Math.ceil((new Date(e.time).getTime()-Date.now())/60000));
+const countdown=Math.floor(mins/60)+'h '+String(mins%60).padStart(2,'0')+'m';
+$('sunGraphic').innerHTML='<div style="text-align:center;margin:0 -5px"><svg viewBox="0 0 210 180" role="img" aria-label="'+e.type+' in '+countdown+'" style="width:100%;max-height:190px"><circle cx="105" cy="77" r="64" fill="'+color+'"/><text x="105" y="84" fill="#152b39" text-anchor="middle" font-size="27" font-weight="850">'+countdown+'</text><path d="M9 145 Q25 132 41 145 T73 145 T105 145 T137 145 T169 145 T201 145 M9 158 Q25 145 41 158 T73 158 T105 158 T137 158 T169 158 T201 158" stroke="#7fc9e4" stroke-width="4" stroke-linecap="round" fill="none"/><text x="105" y="177" fill="#eaf6fc" text-anchor="middle" font-size="13" font-weight="750">'+e.type.toUpperCase()+'</text></svg></div>';
+$('sunrise').textContent=e.type+' '+sunClock(e.time);
+$('sunset').textContent=e.type+' '+sunClock(e.time);
 }
 function sunArc(){
 return '<svg viewBox="0 0 300 150" role="img" aria-label="Daylight arc with shaded night" style="width:100%;max-height:165px"><rect x="0" y="0" width="300" height="150" rx="10" fill="#0b1c31"/><rect x="30" y="0" width="240" height="150" fill="#1b4054"/><path d="M30 114 Q150 -72 270 114" fill="none" stroke="#f2bd61" stroke-width="3"/><circle cx="150" cy="20" r="16" fill="#ffd36e"/><line x1="10" y1="114" x2="290" y2="114" stroke="#8aa4b6" stroke-width="1.5"/><text x="15" y="140" fill="#c4d7e4" font-size="12">Night</text><text x="150" y="140" text-anchor="middle" fill="#e3edf5" font-size="12">Daylight</text><text x="285" y="140" text-anchor="end" fill="#c4d7e4" font-size="12">Night</text></svg>';
