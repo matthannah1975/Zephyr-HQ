@@ -63,23 +63,28 @@ function graph(values,unit){const pts=values.map((v,i)=>[i*300/Math.max(1,values
 let tideData=null;
 function nextTides(){if(!tideData)return;const now=Date.now();const pts=tideData.hilo.filter(p=>new Date(p[0]).getTime()>now);for(const [type,id,at] of [['low','nextLow','lowAt'],['high','nextHigh','highAt']]){const p=pts.find(p=>(p[2].toLowerCase().includes(type)||(type==='high'&&p[2].trim().toUpperCase()==='H')||(type==='low'&&p[2].trim().toUpperCase()==='L')));if(!p){$(id).textContent='Unavailable';$(at).textContent='—';continue}const mins=Math.max(0,Math.ceil((new Date(p[0]).getTime()-now)/60000));$(id).textContent=Math.floor(mins/60)+'h '+String(mins%60).padStart(2,'0')+'m';$(at).textContent=new Date(p[0]).toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit',timeZone:'Australia/Brisbane'});/* Local tide heights are not validated for river locations. */}}
 function miniTide(){
- if(!tideData)return;
- const now=Date.now(),p=tideData.hilo;
- let k=p.findIndex(a=>Date.parse(a[0])>now);
- if(k<1||k+1>=p.length)return;
- const a=Date.parse(p[k-1][0]),b=Date.parse(p[k+1][0]);
- const pts=tideData.interval.filter(q=>Date.parse(q[0])>=a&&Date.parse(q[0])<=b);
- if(pts.length<5)return;
- const low=Math.min(...pts.map(q=>q[1])),high=Math.max(...pts.map(q=>q[1]));
- const x=t=>4+332*(t-a)/(b-a),y=h=>139-132*(h-low)/(high-low||1);
- const values=pts.map(q=>({t:Date.parse(q[0]),h:q[1]}));
- const line=values.map((q,i)=>(i?'L':'M')+x(q.t).toFixed(1)+','+y(q.h).toFixed(1)).join(' ');
- const area=line+' L'+x(values[values.length-1].t).toFixed(1)+',142 L'+x(values[0].t).toFixed(1)+',142 Z';
- const rising=values[values.length-1].h>values[0].h;
- const fill=rising?'#1689dc':'#1760a5',stroke=rising?'#62c9ff':'#54a4ee';
- const closest=values.reduce((best,q)=>Math.abs(q.t-now)<Math.abs(best.t-now)?q:best);
- const nx=x(now),ny=y(closest.h),tx=Math.max(37,Math.min(303,nx));
- $('miniTide').innerHTML='<svg viewBox="0 0 340 186" preserveAspectRatio="xMidYMid meet" aria-label="Tide '+(rising?'rising':'falling')+' curve and current position"><path d="'+area+'" fill="'+fill+'" opacity=".92"/><path d="'+line+'" stroke="'+stroke+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/><line x1="'+nx+'" x2="'+nx+'" y1="3" y2="145" stroke="#ffd46b" stroke-width="2.8" stroke-dasharray="5 4"/><circle cx="'+nx+'" cy="'+ny+'" r="5" fill="#ffd46b" stroke="#142f40" stroke-width="2"/><rect x="'+(tx-32)+'" y="153" width="64" height="27" rx="9" fill="#ffd46b"/><text x="'+tx+'" y="172" fill="#132b3a" font-size="15" font-weight="800" text-anchor="middle">NOW</text></svg>';
+ if(!tideData||!tideData.interval)return;
+ // A rolling twelve-hour window keeps the current time fixed at the centre.
+ const now=Date.now(),span=6*3600000,start=now-span,end=now+span;
+ const all=tideData.interval.map(q=>({t:Date.parse(q[0]),h:Number(q[1])})).filter(q=>Number.isFinite(q.t)&&Number.isFinite(q.h)).sort((a,b)=>a.t-b.t);
+ if(all.length<2||all[0].t>start||all[all.length-1].t<end)return;
+ function heightAt(t){
+  let lo=0,hi=all.length-1;
+  while(hi-lo>1){const mid=(lo+hi)>>1;if(all[mid].t<t)lo=mid;else hi=mid;}
+  const a=all[lo],b=all[hi];return a.h+(b.h-a.h)*(t-a.t)/(b.t-a.t||1);
+ }
+ const values=[{t:start,h:heightAt(start)},...all.filter(q=>q.t>start&&q.t<end),{t:end,h:heightAt(end)}];
+ const low=Math.min(...values.map(q=>q.h)),high=Math.max(...values.map(q=>q.h)),range=high-low||1;
+ const x=t=>4+332*(t-start)/(end-start),y=h=>139-132*(h-low)/range;
+ let segments='';
+ for(let i=1;i<values.length;i++){
+  const a=values[i-1],b=values[i],rising=b.h>=a.h;
+  const path='M'+x(a.t).toFixed(2)+','+y(a.h).toFixed(2)+' L'+x(b.t).toFixed(2)+','+y(b.h).toFixed(2);
+  const area=path+' L'+x(b.t).toFixed(2)+',142 L'+x(a.t).toFixed(2)+',142 Z';
+  segments+='<path d="'+area+'" fill="'+(rising?'#1689dc':'#1760a5')+'" opacity=".92"/><path d="'+path+'" stroke="'+(rising?'#62c9ff':'#54a4ee')+'" stroke-width="5" stroke-linecap="round" fill="none"/>';
+ }
+ const nx=170,ny=y(heightAt(now));
+ $('miniTide').innerHTML='<svg viewBox="0 0 340 186" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Rolling tide predictions, six hours past and six hours ahead, with current time centred">'+segments+'<line x1="170" x2="170" y1="3" y2="145" stroke="#ffd46b" stroke-width="2.8" stroke-dasharray="5 4"/><circle cx="170" cy="'+ny.toFixed(2)+'" r="5" fill="#ffd46b" stroke="#142f40" stroke-width="2"/><rect x="138" y="153" width="64" height="27" rx="9" fill="#ffd46b"/><text x="170" y="172" fill="#132b3a" font-size="15" font-weight="800" text-anchor="middle">NOW</text></svg>';
 }
 async function loadTides(){
  const place=$('location').value;
